@@ -2,10 +2,13 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .models import Company, User
+from .models import Company, User, Storage
 from .permissions import IsCompanyOwner, IsCompanyOwnerOrEmployee
-from .serializers import UserSerializer, CompanySerializer, CompanyAddEmployeeSerializer
+from .serializers import UserSerializer, CompanySerializer, CompanyAddEmployeeSerializer, StorageSerializer, \
+    EmployeeSerializer
 from rest_framework import serializers
+from django.db import models
+
 
 @extend_schema(tags=['Пользователи'])
 class UserRegisterView(generics.CreateAPIView):
@@ -28,16 +31,21 @@ class CompanyCreateView(generics.CreateAPIView):
 class CompanyDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated, IsCompanyOwner]
+    permission_classes = [IsAuthenticated, IsCompanyOwnerOrEmployee]
 
 @extend_schema(tags=['Компании'])
 class CompanyListView(generics.ListAPIView):
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated, IsCompanyOwnerOrEmployee]
-    queryset = Company.objects.all()
-    lookup_field = 'pk'
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Company.objects.filter(
+            models.Q(owner=user) | models.Q(employees=user)
+        ).distinct()
 
 
+@extend_schema(tags=['Компании'])
 class CompanyAddEmployeeView(generics.GenericAPIView):
     serializer_class = CompanyAddEmployeeSerializer
     permission_classes = [IsAuthenticated, IsCompanyOwner]
@@ -57,3 +65,47 @@ class CompanyAddEmployeeView(generics.GenericAPIView):
 
         company.employees.add(user)
         return Response({"detail": "User added successfully"}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=['Компании'])
+class CompanyEmployeesListView(generics.ListAPIView):
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated, IsCompanyOwner]
+    queryset = Company.objects.all()
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        company = self.get_object()
+        return company.employees.all()
+
+
+
+@extend_schema(tags=['Склады'])
+class StorageCreateView(generics.CreateAPIView):
+    serializer_class = StorageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if not hasattr(user, 'company'):
+            raise serializers.ValidationError("У Вас нет компании")
+        serializer.save(company=user.company)
+
+
+@extend_schema(tags=['Склады'])
+class StorageDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Storage.objects.all()
+    serializer_class = StorageSerializer
+    permission_classes = [IsAuthenticated, IsCompanyOwner]
+
+
+@extend_schema(tags=['Склады'])
+class StorageListView(generics.ListAPIView):
+    serializer_class = StorageSerializer
+    permission_classes = [IsAuthenticated, IsCompanyOwner]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'company'):
+            return Storage.objects.filter(company=user.company)
+        return Storage.objects.none()

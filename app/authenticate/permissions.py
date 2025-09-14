@@ -6,5 +6,8 @@ class IsCompanyOwner(permissions.BasePermission):
 
 class IsCompanyOwnerOrEmployee(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        return obj.owner == request.user or request.user in obj.employees.all()
-
+        company = getattr(obj, 'company', None) or obj
+        return (
+            company.owner == request.user
+            or request.user in company.employees.all()
+        )

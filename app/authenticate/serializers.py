@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Company
+from .models import User, Company, Storage
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,7 +28,7 @@ class CompanySerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         user = self.context['request'].user
         if hasattr(user, 'company'):
-            raise serializers.ValidationError("Пользователь уже владеет компанией")
+            raise serializers.ValidationError("Вы уже владеете компанией")
         return attrs
 
 class CompanyAddEmployeeSerializer(serializers.Serializer):
@@ -38,3 +38,22 @@ class CompanyAddEmployeeSerializer(serializers.Serializer):
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError("Пользователь с таким id не существует")
         return value
+
+
+class StorageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Storage
+        fields = ['id', 'address', 'company', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+    def validate_company(self, value):
+        user = self.context['request'].user
+        if hasattr(user, 'company') and value != user.company:
+            raise serializers.ValidationError("Вы не можете управлять этим складом.")
+        return value
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
