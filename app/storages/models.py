@@ -12,4 +12,3 @@ class Storage(models.Model):
 
     def __str__(self):
         return f"{self.address} ({self.company.name})"
-

@@ -11,6 +11,7 @@ from django.db import models
 from authenticate.serializers import EmployeeSerializer
 
 
+
 @extend_schema(tags=['Компании'])
 class CompanyCreateView(generics.CreateAPIView):
     queryset = Company.objects.all()

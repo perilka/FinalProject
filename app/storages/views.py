@@ -7,6 +7,7 @@ from companies.permissions import IsCompanyOwner, IsCompanyOwnerOrEmployee
 from rest_framework import serializers
 
 
+
 @extend_schema(tags=['Склады'])
 class StorageCreateView(generics.CreateAPIView):
     serializer_class = StorageSerializer
