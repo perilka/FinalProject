@@ -3,28 +3,19 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, username=None, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
-
-        if not username:
-            base_username = email.split('@')[0]
-            username = base_username
-            counter = 1
-            while self.model.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
-
-        user = self.model(email=email, username=username, **extra_fields)
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, username=None, **extra_fields):
+    def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, password=password, username=username, **extra_fields)
+        return self.create_user(email, password=password, **extra_fields)
 
 
 class User(AbstractBaseUser):
@@ -34,7 +25,15 @@ class User(AbstractBaseUser):
         unique=True,
     )
 
-    username = models.CharField(max_length=50, unique=True)
+    username = models.CharField(max_length=20, blank=True, null=True)
+
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.SET_NULL,
+        related_name='employees',
+        blank=True,
+        null=True
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -58,37 +57,3 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.email
-
-
-class Company(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    inn = models.CharField(max_length=12, unique=True)
-    owner = models.OneToOneField(
-        'authenticate.User',
-        on_delete=models.CASCADE,
-        related_name='company'
-    )
-    employees = models.ManyToManyField(
-        'authenticate.User',
-        related_name='companies',
-        blank=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-
-class Storage(models.Model):
-    address = models.CharField(max_length=255)
-    company = models.ForeignKey(
-        'authenticate.Company',
-        on_delete=models.CASCADE,
-        related_name='storages'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.address} ({self.company.name})"

@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     'authenticate.apps.AuthenticatedConfig',
     'rest_framework',
     'drf_spectacular',
+    'companies.apps.CompaniesConfig',
+    'storages.apps.StoragesConfig',
 ]
 
 MIDDLEWARE = [

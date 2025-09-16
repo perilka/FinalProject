@@ -1,17 +1,11 @@
 from django.urls import path
-from .views import (
-    CompanyListView,
-    CompanyDetailView,
-    CompanyCreateView,
-    CompanyAddEmployeeView,
-    CompanyEmployeesListView,
-)
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .views import UserRegisterView
 
 urlpatterns = [
-    path('', CompanyListView.as_view(), name='company-list'),
-    path('create/', CompanyCreateView.as_view(), name='company-create'),
-    path('<int:pk>/', CompanyDetailView.as_view(), name='company-detail'),
-    path('<int:pk>/add-employee/', CompanyAddEmployeeView.as_view(), name='company-add-employee'),
-    path('<int:pk>/employees/', CompanyEmployeesListView.as_view(), name='company-employees-list'),
+    path('register/', UserRegisterView.as_view(), name='user-register'),
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
+
 
