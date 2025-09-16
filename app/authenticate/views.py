@@ -96,7 +96,7 @@ class StorageCreateView(generics.CreateAPIView):
 class StorageDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Storage.objects.all()
     serializer_class = StorageSerializer
-    permission_classes = [IsAuthenticated, IsCompanyOwner]
+    permission_classes = [IsAuthenticated, IsCompanyOwnerOrEmployee]
 
 
 @extend_schema(tags=['Склады'])
